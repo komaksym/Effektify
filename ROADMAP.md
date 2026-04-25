@@ -24,10 +24,10 @@ Robyn CSV (data/robyn.csv)
 ingest.py ──────────────► clean DataFrame {week, channel, spend, revenue}
    │
    ▼
-curve_fit.py ───────────► (α, β, R²) per channel  via scipy.optimize.curve_fit
-   │
+curve_fit.py ───────────► joint fit  rev = base + Σ α_c · log(1 + s_c/β_c)
+   │                       via scipy.optimize.least_squares  (one fit, K channels)
    ▼
-bootstrap.py ───────────► 500 resamples → param + revenue 90% CIs
+bootstrap.py ───────────► 500 week-resamples, joint refit each → param 90% CIs
    │                       (cached as cache/channel_curves.json at startup)
    ▼
 optimizer.py ───────────► constrained reallocation (5–60%, ≤1.5× hist max)
@@ -65,12 +65,14 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
 - **Acceptance**: `uv run python -m src.ingest` prints `(n_weeks, n_channels, total_spend, total_revenue)` matching Robyn's published numbers; ruff clean.
 
 ### M1 — Modeling core (curves + CIs)
-- **Goal**: per-channel saturation curves with R² and 90% bootstrap CIs, cached at startup.
-- **Deliverable**: `src/curve_fit.py`, `src/bootstrap.py`, `src/simulator.py`. Cache file `cache/channel_curves.json` matches PRD §7 schema (α, β, α_ci, β_ci, R², weeks_of_data, historical_spend_max).
+- **Goal**: per-channel saturation curves jointly estimated with 90% bootstrap CIs, cached at startup.
+- **Deliverable**: `src/curve_fit.py`, `src/bootstrap.py`, `src/simulator.py`. Cache file `cache/channel_curves.json` carries per-channel α/β + α_ci/β_ci + weeks_of_data + historical_spend_max, plus joint-model `base`/`base_ci`/`r_squared` and an `untested` list.
+- **Note on the PRD pivot**: PRD §6/§8 said "fit per channel via `curve_fit`" — that's mathematically broken on aggregate revenue (univariate R² capped at corr², ≤ 0.20 on Robyn). M1 fits jointly via `scipy.optimize.least_squares`: one nonlinear regression `rev_t = base + Σ α_c · log(1+s_c,t/β_c)`. Per-channel (α, β) shape is preserved; the `R² < 0.3` quality gate moves from per-channel univariate R² to joint R² + per-channel CI tightness (M2 picks the exact rule).
 - **Acceptance**:
-  - At least one channel with R² ≥ 0.5 (proof the fit isn't broken).
-  - Bootstrap on a synthetic α=10000, β=500 toy dataset recovers params within CI.
-  - Per-channel curve plots saved to `reports/curves/`.
+  - Joint model R² ≥ 0.45 on Robyn. (Multistart-confirmed ceiling is ~0.484. The remaining variance correlates 0.65 with `competitor_sales_B`, an external regressor Robyn includes but real Effektify customers wouldn't have — so this is a realistic production ceiling, not a fitting bug. The R² < 0.3 quality gate in PRD §8 referred to per-channel univariate fit; with joint fit we use joint R² ≥ 0.45 as the trust signal and per-channel CI tightness as the per-channel quality flag, finalised in M2.)
+  - Bootstrap on a synthetic 2-channel joint toy dataset recovers all (base, α_c, β_c) inside 90% CIs.
+  - Untested channels (zero historical spend) surface in `JointFit.untested`, never fed into the optimizer.
+  - Per-channel "attributed-revenue" curve plots saved to `reports/curves/`.
 
 ### M2 — Optimizer & diagnosis
 - **Goal**: constrained reallocation emitting the PRD §7 optimizer output dict.

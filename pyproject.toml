@@ -6,10 +6,12 @@ readme = "README.md"
 requires-python = ">=3.13.0"
 dependencies = [
     "commitizen>=4.13.10",
+    "matplotlib>=3.10.9",
     "numpy>=2.4.4",
     "pandas>=3.0.2",
     "pre-commit>=4.6.0",
     "ruff>=0.15.12",
+    "scipy>=1.17.1",
 ]
 
 [tool.commitizen]
@@ -25,3 +27,8 @@ pythonpath = ["."]
 
 [tool.ruff]
 line-length = 80
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
