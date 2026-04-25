@@ -33,4 +33,4 @@ repos:
     hooks:
       - id: commitizen
       - id: commitizen-branch
-        stages: [pre-push]
+        stages: [pre-commit]
