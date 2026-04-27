@@ -16,7 +16,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.bootstrap import JointBootstrap, bootstrap_joint
-from src.curve_fit import JointFit, fit_joint, to_matrix
+from src.curve_fit import JointFit, fit_joint, partial_r_squared, to_matrix
 from src.ingest import load_robyn
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,11 +41,11 @@ def _attributed_revenue(
     """
 
     other = np.zeros_like(revenue)
-    for j, c in enumerate(channels):
-        if c == name:
+    for idx, other_name in enumerate(channels):
+        if other_name == name:
             continue
-        cf = fit.channels[c]
-        other += cf.alpha * np.log1p(spend_mat[:, j] / cf.beta)
+        cf = fit.channels[other_name]
+        other += cf.alpha * np.log1p(spend_mat[:, idx] / cf.beta)
 
     return revenue - fit.base - other
 
@@ -98,7 +98,11 @@ def _plot_curve(
     plt.close(fig)
 
 
-def _build_cache(fit: JointFit, boot: JointBootstrap) -> dict[str, object]:
+def _build_cache(
+    fit: JointFit,
+    boot: JointBootstrap,
+    partial_r2_by_channel: dict[str, float],
+) -> dict[str, object]:
     channel_curves: dict[str, dict[str, object]] = {}
     for name, cf in fit.channels.items():
         channel_curves[name] = {
@@ -106,6 +110,9 @@ def _build_cache(fit: JointFit, boot: JointBootstrap) -> dict[str, object]:
             "beta": cf.beta,
             "alpha_ci": list(boot.alpha_ci[name]),
             "beta_ci": list(boot.beta_ci[name]),
+            "alpha_samples": [float(x) for x in boot.alpha_samples[name]],
+            "beta_samples": [float(x) for x in boot.beta_samples[name]],
+            "partial_r_squared": partial_r2_by_channel[name],
             "weeks_of_data": cf.n_obs,
             "historical_spend_max": cf.spend_max,
         }
@@ -115,6 +122,7 @@ def _build_cache(fit: JointFit, boot: JointBootstrap) -> dict[str, object]:
         "joint": {
             "base": fit.base,
             "base_ci": list(boot.base_ci),
+            "base_samples": [float(x) for x in boot.base_samples],
             "r_squared": fit.r_squared,
         },
         "untested": list(fit.untested),
@@ -133,14 +141,19 @@ def main() -> None:
     boot = bootstrap_joint(df, n_resamples=N_RESAMPLES, seed=SEED)
 
     revenue, spend_mat, channels, _ = to_matrix(df)
-    for j, name in enumerate(channels):
-        spend_col = spend_mat[:, j]
+    partial_r2 = partial_r_squared(revenue, spend_mat, fit.r_squared)
+    partial_r2_by_channel = {
+        name: partial_r2[idx] for idx, name in enumerate(channels)
+    }
+
+    for idx, name in enumerate(channels):
+        spend_col = spend_mat[:, idx]
         attributed = _attributed_revenue(
             name, revenue, spend_mat, channels, fit
         )
         _plot_curve(name, spend_col, attributed, fit, boot)
 
-    cache = _build_cache(fit, boot)
+    cache = _build_cache(fit, boot, partial_r2_by_channel)
     CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     CACHE_PATH.write_text(json.dumps(cache, indent=2))
 
@@ -155,6 +168,7 @@ def main() -> None:
         print(
             f"  {name:>10}  α={cf.alpha:>14,.0f}  "
             f"β={cf.beta:>10,.0f}  "
+            f"partial_R²={partial_r2_by_channel[name]:+.3f}  "
             f"α_ci=[{a_lo:>10,.0f}, {a_hi:>10,.0f}]"
         )
     if fit.untested:

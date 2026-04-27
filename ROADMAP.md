@@ -76,13 +76,16 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
 
 ### M2 — Optimizer & diagnosis
 - **Goal**: constrained reallocation emitting the PRD §7 optimizer output dict.
-- **Deliverable**: `src/optimizer.py` produces full structured dict (channels with current/recommended/delta/diagnosis/marginal_roas/in_observed_range, untested_channels, low_confidence_channels, totals + CI).
+- **Deliverable**: `src/optimizer.py` (SLSQP + diagnosis + bootstrap delta CI), `src/config.py` (constants), updated `src/precompute.py` adding partial R² + bootstrap samples to the cache.
+- **Two deviations from PRD §8** (documented inline in `config.py`):
+  - **Lower bound 5% applies only to currently-active channels.** A channel sitting at $0 this week is not forced up to 5% — recommending non-zero spend on a dormant channel is itself an unjustifiable recommendation without a pilot test. The 5% guard is preserved for channels in use (so we can't recommend killing them).
+  - **Diagnosis labels use spend-ratio, not absolute marginal-ROAS.** PRD's `<0.5 / >2.0` thresholds assume ROAS in natural units (1–3 typical); our joint MMM-lite produces ROAS values 10–60 (β at upper bound for several channels, expected without adstock or external controls). Spend-ratio is scale-invariant and matches the user's mental model: `recommended < 90% of current` → "saturated"; `recommended > 110% of current` → "room to grow"; in between → "near optimum". Marginal ROAS is still surfaced in the output for the agent to cite.
 - **Acceptance**:
-  - On the picked demo week: `total_delta ≥ $2,000`.
-  - No channel breaches the 5–60% / 1.5×-historical bounds.
-  - Diagnosis labels match the PRD §8 rule table exactly.
-  - Untested channels never assigned a recommendation.
-  - Hand-built 3-channel test where the right answer is known recovers it.
+  - On the picked demo week: `total_delta ≥ $2,000`. (2018-06-25 placeholder yields +$20,468; M5 may pick a different week.)
+  - Active-channel recommendations honour the 5% / 60% / 1.5×-historical bounds. Frozen channels (low-confidence, untested) keep current spend by design.
+  - Untested channels never assigned a recommendation (surfaced in `untested_channels`).
+  - Low-confidence (partial R² < 0.02) channels frozen at current spend, surfaced in `low_confidence_channels`.
+  - Hand-built 3-channel test where the closed-form KKT solution is known recovers it within rounding.
 
 ### M3 — Agent layer (grounded translation only)
 - **Goal**: 4-node LangGraph (`diagnose → recommend → validate → format`) producing Pydantic-validated `ChannelRecommendation`s with 100% grounded numbers.

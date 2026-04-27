@@ -182,3 +182,32 @@ def fit_joint(df: pd.DataFrame) -> JointFit:
         untested=untested,
         r_squared=float(r2),
     )
+
+
+def partial_r_squared(
+    revenue: NDArray[np.float64],
+    spend_mat: NDArray[np.float64],
+    full_r_squared: float,
+) -> dict[int, float]:
+    """For each column, the R² drop when that column is removed from the fit.
+
+    A channel that meaningfully contributes shows a large drop; a channel
+    that adds no signal shows ~0. Used as the per-channel quality gate
+    (replaces the PRD's per-channel univariate R² < 0.3 rule).
+    """
+
+    out: dict[int, float] = {}
+    k = spend_mat.shape[1]
+    for j in range(k):
+        if k == 1:
+            out[j] = full_r_squared
+            continue
+
+        sub_mat = np.delete(spend_mat, j, axis=1)
+        try:
+            _, _, _, r2_without = fit_joint_matrix(revenue, sub_mat)
+        except (RuntimeError, ValueError):
+            r2_without = 0.0
+        out[j] = float(full_r_squared - r2_without)
+
+    return out
