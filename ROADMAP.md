@@ -4,16 +4,16 @@
 
 ## Context
 
-Effektify's existing AI agent answers retrospective questions ("what happened?"). The Counterfactual Coach answers the prospective one ("what would have happened with a different allocation?"). This roadmap sequences a ~48h build of a working demo on the Robyn open-source MMM benchmark — packaged so a reviewer (Max / Martin / Fredrik) can see in 3 minutes how it drops into Effektify as an App. The deliverable is a Loom + repo + live Streamlit app, optimised for "interview within 48h," not for production hardening.
+Effektify's existing AI agent answers retrospective questions ("what happened?"). The Counterfactual Coach answers the prospective one ("what would have happened with a different allocation?"). This roadmap sequences a ~48h build of a working demo on the Robyn open-source MMM benchmark — packaged so a reviewer (Max / Martin / Fredrik) can see in 3 minutes how it drops into Effektify as an App. The deliverable is a Loom + repo + live Vercel-hosted web app, optimised for "interview within 48h," not for production hardening.
 
 ## TLDR
 
-1. **Ship**: working Streamlit recommendation app on the Robyn dataset + ~3-min Loom + public repo + live deploy.
+1. **Ship**: working custom recommendation web app (HTML/CSS/JS) on the Robyn dataset + ~3-min Loom + public repo + Vercel deploy.
 2. **Stack**: deterministic Python (`scipy.curve_fit`, bootstrap, `scipy.optimize.minimize`) does the math; a 4-node LangGraph agent only translates structured JSON into grounded English.
 3. **In scope**: per-channel saturation fits + 90% bootstrap CIs + constrained optimizer + diagnosis labels + grounded agent + comparison-table UI + untested-channel surfacing.
 4. **Out of scope**: adstock, Bayesian hierarchies, incrementality, MTA, auth, persistence, week selector, slider override, untested-channel recommendations.
 5. **Deferred (called out, not built)**: v2 = same pipeline against Effektify's connected customer data; v3 = cross-customer hierarchical pooling for cold-start channels.
-6. **Done = ** comparison table on screen with `total_delta ≥ $2,000`, every quoted number regex-grounded against tool output, Loom under 3:10, email sent.
+6. **Done =** comparison table on screen with `total_delta ≥ $2,000`, every quoted number regex-grounded against tool output, Loom under 3:10, email sent.
 
 ## High-Level Flow
 
@@ -40,20 +40,24 @@ agent_graph.py ─────────► LangGraph: diagnose → recommend 
 grounding.py ───────────► regex check on agent prose vs structured JSON (1% tol, 1 retry)
    │
    ▼
-ui_app.py (Streamlit) ──► comparison table + per-row curves + total Δ + CI band
+export_ui_payload.py ───► static JSON payload for the demo week
+   │
+   ▼
+frontend/ (HTML/CSS/JS) ► custom comparison table + per-row curves + total Δ + CI band
 ```
 
 The LLM's only jobs: (1) tool dispatch, (2) JSON → English. Numbers in prose must already exist in tool output — enforced.
 
 ## Hard Constraints
 
-- **Deps ceiling**: `pandas`, `numpy`, `scipy`, `langgraph`, `langchain-anthropic` (or equivalent), `pydantic`, `streamlit`, `plotly` (or `matplotlib`). No `torch`, no PyMC, no Robyn library beyond its CSV.
+- **Deps ceiling**: `pandas`, `numpy`, `scipy`, `langgraph`, `langchain-anthropic` (or equivalent), `pydantic`, `plotly` (or `matplotlib`). No `torch`, no PyMC, no Robyn library beyond its CSV.
 - **Numerical purity**: all numbers come from deterministic Python. LLM output is regex-validated against tool output within 1% tolerance, 1 retry, then fail-loud (visible to the user).
 - **Realism guards**: `0.05 × budget ≤ spend_i ≤ 0.60 × budget`; `spend_i ≤ 1.5 × max(historical_spend_i)`.
 - **Quality gate**: channels with `R² < 0.3` excluded from optimization, surfaced as "needs more data".
 - **Untested channels**: listed transparently, never given a recommendation.
 - **Demo surface**: single hand-picked week, hardcoded. No selector. No upload UI. No slider.
-- **Layering**: modeling layer never imports `langgraph` or `streamlit`; agent layer never imports `streamlit`. UI / domain / data are separated per project conventions.
+- **Frontend constraint**: custom HTML/CSS/JS only, using the Claude-supplied design files as the source of truth. No Streamlit shell.
+- **Layering**: modeling layer never imports `langgraph` or frontend code; agent layer never imports frontend code. The frontend consumes precomputed JSON only. UI / domain / data are separated per project conventions.
 
 ## Milestones
 
@@ -95,25 +99,27 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
   - Forced-failure test (mock agent that hallucinates a value) is caught and surfaced.
 
 ### M4 — UI (the demo)
-- **Goal**: Streamlit page that loads with the demo week's recommendation already on screen, no clicks required.
-- **Deliverable**: `src/ui_app.py`, runnable via `streamlit run src/ui_app.py`.
+- **Goal**: custom HTML/CSS/JS experience that loads with the demo week's recommendation already on screen, no clicks required, matching the Claude design files we import.
+- **Deliverable**: frontend assets (`frontend/index.html`, `frontend/styles.css`, `frontend/app.js`, plus design assets) wired to a precomputed JSON payload exported from Python and deployable on Vercel as a static site.
 - **Acceptance**:
+  - No Streamlit chrome anywhere; the entire experience is custom UI/UX.
   - Sticky header: total spend + dollar delta visible above the fold.
   - One row per active channel with columns: Channel | Current | Recommended | Δ | Diagnosis | R² | Why.
   - Row click expands the saturation curve with current + recommended markers and shaded CI band.
   - Untested-channels section visible below the table.
   - Total delta with CI bar at the bottom.
   - Footer trust signals (data source, bootstrap count, 1.5× bound, v3 pooling note).
+  - Desktop and mobile layouts both hold up without overflow or broken interactions.
   - Screenshot saved to `reports/ui.png`.
 
 ### M5 — Demo prep & deploy
-- **Goal**: ready-to-record state on a public URL.
+- **Goal**: ready-to-record state on a public Vercel URL.
 - **Deliverable**:
   - Demo week hardcoded in `src/config.py`.
-  - All curves + optimizer output + agent output pre-computed at startup (cached on disk so first paint is instant).
-  - README with one-command setup: `uv sync && streamlit run src/ui_app.py`.
-  - Streamlit Community Cloud deploy, URL captured.
-- **Acceptance**: cold-clone → `uv sync` → app live in < 60s on a fresh machine; live URL renders identically.
+  - All curves + optimizer output + agent output pre-computed into static JSON so first paint is instant and the frontend does not depend on a live Python UI server.
+  - README with local preview + Vercel deploy steps for the custom frontend.
+  - Vercel preview / production deploy, URL captured.
+- **Acceptance**: cold-clone → install deps → generate payload → local preview works on a fresh machine; Vercel URL renders identically.
 
 ### M6 — Loom + submission
 - **Goal**: ship.
@@ -147,7 +153,7 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
 - Reviewer assumes the LLM is the brain → architecture diagram on screen at 1:15 with explicit narration.
 
 ## Cut Order (if time slips)
-1. Streamlit Cloud deploy (fall back to local + Loom).
+1. Vercel deploy (fall back to local preview + Loom).
 2. CI band on the per-row curves (keep the curves themselves).
 3. Per-channel curve hover/expansion (keep the table).
 4. Anything that isn't: the table + the dollar number + the grounded prose.
@@ -156,7 +162,7 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
 - `uv run pytest` — unit tests (curve_fit toy recovery, optimizer hand-built scenario, grounding forced-failure).
 - `uv run ruff check .` — lint clean.
 - `uv run python -m src.precompute` — regenerates `cache/channel_curves.json` and `cache/optimizer_output.json` from scratch.
-- `streamlit run src/ui_app.py` — open localhost, confirm comparison table renders, total delta ≥ $2,000, click a row → curve + CI band, untested section visible.
+- local web preview — open localhost, confirm comparison table renders, total delta ≥ $2,000, click a row → curve + CI band, untested section visible.
 - Cold-clone walkthrough on a clean directory before recording the Loom.
 
 ## Critical Files (to be created)
@@ -168,7 +174,11 @@ Each milestone closes only after `ruff` + tests + a manual smoke check pass. If 
 - [src/optimizer.py](src/optimizer.py) — SLSQP constrained reallocation + diagnosis labels.
 - [src/agent_graph.py](src/agent_graph.py) — 4-node LangGraph + Pydantic schemas.
 - [src/grounding.py](src/grounding.py) — regex grounding check.
-- [src/ui_app.py](src/ui_app.py) — Streamlit page.
+- [src/export_ui_payload.py](src/export_ui_payload.py) — flatten cached optimizer + agent output into frontend JSON.
+- [frontend/index.html](frontend/index.html) — custom HTML shell for the demo.
+- [frontend/styles.css](frontend/styles.css) — custom styling from the Claude design files.
+- [frontend/app.js](frontend/app.js) — data binding + interaction logic for the demo.
+- [vercel.json](vercel.json) — static hosting / routing config for Vercel.
 - [src/config.py](src/config.py) — demo week + constants.
 - [src/precompute.py](src/precompute.py) — startup cache builder.
 - [PLANS.md](PLANS.md) — current slice's short-term plan, refreshed at each milestone.
