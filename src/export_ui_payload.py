@@ -128,6 +128,19 @@ def _build_actual_allocation() -> dict[str, float]:
     }
 
 
+def _build_actual_revenue() -> float:
+    df = load_robyn()
+    week_row = df[df["week"] == DEMO_WEEK]
+    if week_row.empty:
+        raise ValueError(f"DEMO_WEEK {DEMO_WEEK} not in dataset")
+
+    revenues = week_row["revenue"].drop_duplicates()
+    if len(revenues) != 1:
+        raise ValueError(f"DEMO_WEEK {DEMO_WEEK} has inconsistent revenue rows")
+
+    return float(revenues.iloc[0])
+
+
 def _join_channels(
     optimizer_dict: dict,
     cache: dict,
@@ -211,6 +224,7 @@ def build_brief_payload(
     optimizer_dict: dict,
     agent_output: AgentOutput,
     actual_allocation: dict[str, float],
+    actual_revenue: float,
 ) -> dict:
     demo_meta = _build_demo_meta()
     ledger_channels, low_confidence_channels = _join_channels(
@@ -218,6 +232,7 @@ def build_brief_payload(
     )
 
     budget = float(sum(actual_allocation.values()))
+    modeled_delta = float(optimizer_dict["total_delta"])
     delta_low, delta_high = optimizer_dict["total_delta_ci"]
 
     return {
@@ -236,15 +251,11 @@ def build_brief_payload(
         },
         "hero": {
             "budget": budget,
-            "delta_point": float(optimizer_dict["total_delta"]),
+            "delta_point": modeled_delta,
             "delta_low": float(delta_low),
             "delta_high": float(delta_high),
-            "total_current_revenue": float(
-                optimizer_dict["total_current_revenue"]
-            ),
-            "total_recommended_revenue": float(
-                optimizer_dict["total_recommended_revenue"]
-            ),
+            "total_current_revenue": float(actual_revenue),
+            "total_recommended_revenue": float(actual_revenue + modeled_delta),
             "base": float(cache["joint"]["base"]),
             "headline": sanitize_rich_text(agent_output.headline),
         },
@@ -264,6 +275,7 @@ def export_payloads(
 ) -> dict:
     cache = load_cache(cache_path)
     actual_allocation = _build_actual_allocation()
+    actual_revenue = _build_actual_revenue()
     optimizer_output = optimize_allocation(cache, actual_allocation)
     optimizer_dict = to_dict(optimizer_output)
     agent_output = load_agent_output(agent_output_path)
@@ -272,6 +284,7 @@ def export_payloads(
         optimizer_dict=optimizer_dict,
         agent_output=agent_output,
         actual_allocation=actual_allocation,
+        actual_revenue=actual_revenue,
     )
 
     optimizer_output_path.parent.mkdir(parents=True, exist_ok=True)
