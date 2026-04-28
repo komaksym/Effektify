@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "pip install uv",
+  "installCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh",
   "buildCommand": "uv run python -m src.export_ui_payload",
   "outputDirectory": "frontend"
 }
