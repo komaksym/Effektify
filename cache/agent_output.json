@@ -1,0 +1,37 @@
+{
+  "headline": "Keep the same <b>$19,301</b> weekly budget, pull dollars out of facebook, and push them into search for a modeled +$20,468 lift.",
+  "recommendations": [
+    {
+      "channel": "facebook",
+      "action": "decrease",
+      "reasoning": "Cut from <b>$3,757</b> to <b>$2,271</b>. Facebook is saturated and the modeled delta at the lower spend is -$71,441.",
+      "confidence": "high"
+    },
+    {
+      "channel": "ooh",
+      "action": "hold",
+      "reasoning": "Hold at $0. OOH stays frozen because the signal is weak, so the optimizer leaves it unchanged.",
+      "confidence": "low"
+    },
+    {
+      "channel": "print",
+      "action": "hold",
+      "reasoning": "Hold at <b>$10,384</b>. Print stays frozen because the signal is weak, so the optimizer leaves it unchanged.",
+      "confidence": "low"
+    },
+    {
+      "channel": "search",
+      "action": "increase",
+      "reasoning": "Raise from <b>$5,160</b> to <b>$6,646</b>. Search still carries 61.6 marginal ROAS there and adds +$91,909 in modeled revenue.",
+      "confidence": "high"
+    },
+    {
+      "channel": "tv",
+      "action": "hold",
+      "reasoning": "Hold at $0. TV is near optimum at the current allocation, so the optimizer does not move budget into it.",
+      "confidence": "medium"
+    }
+  ],
+  "untested_channels": [],
+  "warnings": []
+}

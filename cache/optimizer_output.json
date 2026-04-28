@@ -1,0 +1,81 @@
+{
+  "channels": [
+    {
+      "name": "facebook",
+      "current_spend": 3756.94273854507,
+      "recommended_spend": 2270.865229521574,
+      "current_revenue_contribution": 478093.4365832434,
+      "recommended_revenue_contribution": 406652.15653015143,
+      "delta": -71441.28005309199,
+      "marginal_roas_at_current": 38.234805291695004,
+      "marginal_roas_at_recommended": 61.59877193580762,
+      "diagnosis": "saturated",
+      "in_observed_range": true,
+      "partial_r_squared": 0.10964110053967169
+    },
+    {
+      "name": "ooh",
+      "current_spend": 0.0,
+      "recommended_spend": 0.0,
+      "current_revenue_contribution": 0.0,
+      "recommended_revenue_contribution": 0.0,
+      "delta": 0.0,
+      "marginal_roas_at_current": 3.80036195118429,
+      "marginal_roas_at_recommended": 3.80036195118429,
+      "diagnosis": "flat / needs more data",
+      "in_observed_range": true,
+      "partial_r_squared": 0.011073116735992872
+    },
+    {
+      "name": "print",
+      "current_spend": 10384.1333333333,
+      "recommended_spend": 10384.1333333333,
+      "current_revenue_contribution": 122397.88435752796,
+      "recommended_revenue_contribution": 122397.88435752796,
+      "delta": 0.0,
+      "marginal_roas_at_current": 11.60034715106585,
+      "marginal_roas_at_recommended": 11.60034715106585,
+      "diagnosis": "flat / needs more data",
+      "in_observed_range": true,
+      "partial_r_squared": 0.010453821440387867
+    },
+    {
+      "name": "search",
+      "current_spend": 5160.0,
+      "recommended_spend": 6646.077509023492,
+      "current_revenue_contribution": 324996.9702161962,
+      "recommended_revenue_contribution": 416906.2745719025,
+      "delta": 91909.30435570632,
+      "marginal_roas_at_current": 62.09638448384636,
+      "marginal_roas_at_recommended": 61.59877330772495,
+      "diagnosis": "room to grow",
+      "in_observed_range": true,
+      "partial_r_squared": 0.1542572261135059
+    },
+    {
+      "name": "tv",
+      "current_spend": 0.0,
+      "recommended_spend": 0.0,
+      "current_revenue_contribution": 0.0,
+      "recommended_revenue_contribution": 0.0,
+      "delta": 0.0,
+      "marginal_roas_at_current": 14.806466346089561,
+      "marginal_roas_at_recommended": 14.806466346089561,
+      "diagnosis": "near optimum",
+      "in_observed_range": true,
+      "partial_r_squared": 0.08279040172373198
+    }
+  ],
+  "untested_channels": [],
+  "low_confidence_channels": [
+    "ooh",
+    "print"
+  ],
+  "total_current_revenue": 1929607.4951461982,
+  "total_recommended_revenue": 1950075.5194488126,
+  "total_delta": 20468.024302614387,
+  "total_delta_ci": [
+    -46190.67222736133,
+    70807.02045767484
+  ]
+}
