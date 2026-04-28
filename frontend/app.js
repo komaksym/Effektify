@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
   elements.warnings = document.getElementById("warnings")
   elements.ledgerSection = document.getElementById("ledgerSection")
   elements.asides = document.getElementById("asides")
-  elements.footer = document.getElementById("footer")
   elements.refreshBtn = document.getElementById("refreshBtn")
   elements.shareBtn = document.getElementById("shareBtn")
 
@@ -96,7 +95,6 @@ function render() {
   renderHero()
   renderLedgerSection()
   renderAsides()
-  renderFooter()
 }
 
 function renderLoadError(error) {
@@ -116,7 +114,6 @@ function renderLoadError(error) {
   `
   elements.ledgerSection.innerHTML = ""
   elements.asides.innerHTML = ""
-  elements.footer.innerHTML = ""
 }
 
 function renderHealthStatus() {
@@ -143,7 +140,10 @@ function renderWarnings() {
 
 function renderHero() {
   const { meta, hero, channels, asides } = state.brief
-  const readyCount = channels.length
+  const movedCount = channels.filter(
+    (row) => Math.abs(row.recommended_spend - row.current_spend) >= 1
+  ).length
+  const heldCount = channels.length - movedCount
   const needsDataCount = asides.low_confidence_channels.length
   const untriedCount = asides.untested_channels.length
   const upliftPercent =
@@ -197,7 +197,7 @@ function renderHero() {
             </div>
             <div class="meta-chip">
               <span class="chip-label">Channels</span>
-              <span class="chip-value">${readyCount} ready · ${needsDataCount} needs more data · ${untriedCount} untried</span>
+              <span class="chip-value">${movedCount} moved · ${heldCount} held · ${needsDataCount} weak signal · ${untriedCount} untried</span>
             </div>
             <div class="meta-chip">
               <span class="chip-label">Numbers checked</span>
@@ -232,7 +232,7 @@ function renderHero() {
             With the same total spend, a smarter split between your channels
             would have generated about <strong>${formatSignedPercent(
               upliftPercent
-            )}</strong> more modeled revenue last week.
+            )}</strong> more revenue last week.
             ${renderConfidenceSentence(hero.delta_low, hero.delta_high)}
           </p>
 
@@ -405,61 +405,52 @@ function renderLedgerRow(row, index, isOpen) {
             <div class="ledger-detail">
               <div class="ledger-detail-grid">
                 <article class="detail-curve-card">
-                  <p class="detail-term">Response curve</p>
+                  <div class="curve-title">
+                    <span class="detail-term">Spend vs. revenue</span>
+                    <span class="curve-legend">
+                      <span><i class="legend-line"></i>response curve</span>
+                      <span><i class="legend-band"></i>likely range</span>
+                      <span><i class="legend-current"></i>current</span>
+                      <span><i class="legend-rec"></i>recommended</span>
+                    </span>
+                  </div>
                   <div class="detail-curve">
                     ${renderCurve(row)}
                   </div>
-                  <div class="curve-legend">
-                    <span><i class="legend-band"></i> 90% bootstrap band</span>
-                    <span><i class="legend-line"></i> fitted curve</span>
-                    <span><i class="legend-current"></i> current spend</span>
-                    <span><i class="legend-rec"></i> recommended spend</span>
-                  </div>
                 </article>
-                <article class="detail-metrics-card">
-                  <div class="detail-metrics-grid">
+                <article class="detail-readout">
+                  <div class="detail-note reasoning">${row.grounded_reasoning}</div>
+                  <dl class="meta-grid">
                     <div>
-                      <p class="detail-term">Current revenue</p>
-                      <div class="detail-value">${formatCurrency(
-                        row.current_revenue
-                      )}</div>
+                      <dt>Return per dollar · today</dt>
+                      <dd>${formatNumber(row.marginal_roas_at_current, 2)}x</dd>
                     </div>
                     <div>
-                      <p class="detail-term">Recommended revenue</p>
-                      <div class="detail-value">${formatCurrency(
-                        row.recommended_revenue
-                      )}</div>
-                    </div>
-                    <div>
-                      <p class="detail-term">mROAS at current</p>
-                      <div class="detail-value">${formatNumber(
-                        row.marginal_roas_at_current,
-                        1
-                      )}</div>
-                    </div>
-                    <div>
-                      <p class="detail-term">mROAS at recommended</p>
-                      <div class="detail-value">${formatNumber(
+                      <dt>Return per dollar · recommended</dt>
+                      <dd>${formatNumber(
                         row.marginal_roas_at_recommended,
-                        1
-                      )}</div>
+                        2
+                      )}x</dd>
                     </div>
                     <div>
-                      <p class="detail-term">Historical max</p>
-                      <div class="detail-value">${formatCurrency(
-                        row.historical_max
-                      )}</div>
+                      <dt>Most you've ever spent here</dt>
+                      <dd>${formatCurrency(row.historical_max)}</dd>
                     </div>
                     <div>
-                      <p class="detail-term">Observed range</p>
-                      <div class="detail-value">${
-                        row.in_observed_range
-                          ? "Inside history"
-                          : "Above history"
-                      }</div>
+                      <dt>Signal strength</dt>
+                      <dd>${escapeHtml(row.confidence)}</dd>
                     </div>
-                  </div>
-                  <p class="detail-note">${row.grounded_reasoning}</p>
+                  </dl>
+                  <dl class="meta-grid meta-grid-secondary">
+                    <div>
+                      <dt>Current revenue</dt>
+                      <dd>${formatCurrency(row.current_revenue)}</dd>
+                    </div>
+                    <div>
+                      <dt>Recommended revenue</dt>
+                      <dd>${formatCurrency(row.recommended_revenue)}</dd>
+                    </div>
+                  </dl>
                 </article>
               </div>
             </div>
@@ -500,7 +491,7 @@ function renderAsides() {
                 ${untested
                   .map(
                     (channel) => `
-                      <span class="tag-pill">${escapeHtml(
+                      <span class="tag-pill dashed">${escapeHtml(
                         prettyChannelName(channel)
                       )}</span>
                     `
@@ -565,44 +556,6 @@ function renderAsides() {
   `
 }
 
-function renderFooter() {
-  const { meta } = state.brief
-  elements.footer.innerHTML = `
-    <div class="footer-surface">
-      <div class="footer-grid">
-        <div>
-          <p class="footer-term">Data source</p>
-          <p class="footer-value">
-            Robyn benchmark spend and revenue, flattened to one locked demo
-            week.
-          </p>
-        </div>
-        <div>
-          <p class="footer-term">Bootstrap support</p>
-          <p class="footer-value">
-            ${meta.bootstrap_count} resamples back the confidence band shown in
-            each active row.
-          </p>
-        </div>
-        <div>
-          <p class="footer-term">Guardrails</p>
-          <p class="footer-value">
-            Reallocation stays on the same weekly budget and respects the 1.5×
-            historical spend ceiling.
-          </p>
-        </div>
-        <div>
-          <p class="footer-term">Scope note</p>
-          <p class="footer-value">
-            Untested channels stay out of the recommendation. Cross-customer
-            pooling remains a later v3 step.
-          </p>
-        </div>
-      </div>
-    </div>
-  `
-}
-
 function renderConfidenceCell(confidence) {
   return `
     <span class="confidence-cell">
@@ -654,51 +607,91 @@ function impactPillTone(value) {
 
 function renderSparkline(row) {
   const curve = getCurveData(row)
-  const width = 142
-  const height = 42
-  const paddingX = 6
-  const paddingY = 6
+  const width = 320
+  const height = 44
+  const paddingX = 2
+  const paddingY = 4
   const xScale = scaleLinear(0, curve.maxSpend, paddingX, width - paddingX)
   const yScale = scaleLinear(0, curve.maxRevenue, height - paddingY, paddingY)
 
+  const band = toBandPath(curve.xs, curve.low, curve.high, xScale, yScale)
   const line = toLinePath(
     curve.xs.map((x, index) => ({ x, y: curve.point[index] })),
     xScale,
     yScale
   )
+  const currentX = xScale(row.current_spend)
+  const currentY = yScale(row.current_revenue)
+  const recommendedX = xScale(row.recommended_spend)
+  const recommendedY = yScale(row.recommended_revenue)
+  const markerTone = row.delta_revenue < 0 ? "#ca5b40" : "#3d9347"
+  const arrow =
+    Math.abs(recommendedX - currentX) > 4
+      ? renderSpendArrow(currentX, recommendedX, height - 8, markerTone)
+      : ""
 
   return `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAttribute(
       `${row.channel} sparkline`
     )}">
+      <line
+        x1="${paddingX}"
+        y1="${height - paddingY}"
+        x2="${width - paddingX}"
+        y2="${height - paddingY}"
+        stroke="#d8ccb9"
+        stroke-width="1"
+      />
+      <path d="${band}" fill="rgba(214, 107, 18, 0.13)" />
       <path
         d="${line}"
         fill="none"
         stroke="#d66b12"
-        stroke-width="2"
+        stroke-width="1.8"
         stroke-linecap="round"
       />
-      <circle
-        cx="${xScale(row.current_spend)}"
-        cy="${yScale(row.current_revenue)}"
-        r="3.7"
-        fill="#21180f"
+      <line
+        x1="${currentX}"
+        y1="${paddingY / 2}"
+        x2="${currentX}"
+        y2="${height - paddingY}"
+        stroke="#948777"
+        stroke-width="1"
+        stroke-dasharray="2 3"
+      />
+      <line
+        x1="${recommendedX}"
+        y1="${paddingY / 2}"
+        x2="${recommendedX}"
+        y2="${height - paddingY}"
+        stroke="${markerTone}"
+        stroke-width="1.2"
+        stroke-dasharray="3 2"
       />
       <circle
-        cx="${xScale(row.recommended_spend)}"
-        cy="${yScale(row.recommended_revenue)}"
-        r="3.7"
-        fill="#3d9347"
+        cx="${currentX}"
+        cy="${currentY}"
+        r="3.2"
+        fill="#fbf7ef"
+        stroke="#6f6558"
+        stroke-width="1.4"
       />
+      <circle
+        cx="${recommendedX}"
+        cy="${recommendedY}"
+        r="3.6"
+        fill="${markerTone}"
+      />
+      ${arrow}
     </svg>
   `
 }
 
 function renderCurve(row) {
   const curve = getCurveData(row)
-  const width = 760
-  const height = 356
-  const padding = { top: 16, right: 28, bottom: 32, left: 18 }
+  const width = 540
+  const height = 220
+  const padding = { top: 14, right: 14, bottom: 30, left: 44 }
   const xScale = scaleLinear(
     0,
     curve.maxSpend,
@@ -718,12 +711,26 @@ function renderCurve(row) {
     xScale,
     yScale
   )
-  const historyX = xScale(row.historical_max)
+  const currentX = xScale(row.current_spend)
+  const currentY = yScale(row.current_revenue)
+  const recommendedX = xScale(row.recommended_spend)
+  const recommendedY = yScale(row.recommended_revenue)
+  const markerTone = row.delta_revenue < 0 ? "#ca5b40" : "#3d9347"
+  const gridLines = renderCurveGrid(width, height, padding)
 
   return `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAttribute(
       `${row.channel} response curve`
     )}">
+      ${gridLines}
+      <line
+        x1="${padding.left}"
+        y1="${padding.top}"
+        x2="${padding.left}"
+        y2="${height - padding.bottom}"
+        stroke="#948777"
+        stroke-width="1"
+      />
       <line
         x1="${padding.left}"
         y1="${height - padding.bottom}"
@@ -737,60 +744,135 @@ function renderCurve(row) {
         d="${line}"
         fill="none"
         stroke="#d66b12"
-        stroke-width="4"
+        stroke-width="2"
         stroke-linecap="round"
       />
       <line
-        x1="${historyX}"
+        x1="${currentX}"
         y1="${padding.top}"
-        x2="${historyX}"
+        x2="${currentX}"
         y2="${height - padding.bottom}"
         stroke="#948777"
-        stroke-width="1.8"
-        stroke-dasharray="6 7"
+        stroke-width="1"
+        stroke-dasharray="3 3"
+      />
+      <line
+        x1="${recommendedX}"
+        y1="${padding.top}"
+        x2="${recommendedX}"
+        y2="${height - padding.bottom}"
+        stroke="${markerTone}"
+        stroke-width="1.2"
+        stroke-dasharray="4 3"
       />
       <circle
-        cx="${xScale(row.recommended_spend)}"
-        cy="${yScale(row.recommended_revenue)}"
-        r="9"
-        fill="#3d9347"
+        cx="${currentX}"
+        cy="${currentY}"
+        r="4"
+        fill="#fbf7ef"
+        stroke="#6f6558"
+        stroke-width="1.6"
       />
       <circle
-        cx="${xScale(row.current_spend)}"
-        cy="${yScale(row.current_revenue)}"
-        r="9"
-        fill="#21180f"
+        cx="${recommendedX}"
+        cy="${recommendedY}"
+        r="4.6"
+        fill="${markerTone}"
       />
       <text
-        x="${historyX + 8}"
-        y="${padding.top + 20}"
+        x="${currentX + 6}"
+        y="${padding.top + 12}"
         fill="#6f6558"
         font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-        font-size="12"
+        font-size="10"
       >
-        history max
+        current
+      </text>
+      <text
+        x="${recommendedX + 6}"
+        y="${padding.top + 26}"
+        fill="${markerTone}"
+        font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+        font-size="10"
+      >
+        recommended
+      </text>
+      <text
+        x="${padding.left - 6}"
+        y="${padding.top + 8}"
+        fill="#948777"
+        font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+        font-size="9"
+        text-anchor="end"
+      >
+        revenue earned
+      </text>
+      <text
+        x="${padding.left - 6}"
+        y="${height - padding.bottom + 2}"
+        fill="#948777"
+        font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+        font-size="9"
+        text-anchor="end"
+      >
+        $0
       </text>
       <text
         x="${padding.left}"
-        y="${height - 6}"
+        y="${height - padding.bottom + 16}"
         fill="#6f6558"
         font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-        font-size="12"
+        font-size="9"
       >
-        0
+        $0
       </text>
       <text
         x="${width - padding.right}"
-        y="${height - 6}"
+        y="${height - padding.bottom + 16}"
         fill="#6f6558"
         font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-        font-size="12"
+        font-size="9"
         text-anchor="end"
       >
-        spend
+        spend ${formatCompactCurrency(curve.maxSpend)}
       </text>
     </svg>
   `
+}
+
+function renderCurveGrid(width, height, padding) {
+  const horizontal = Array.from({ length: 3 }, (_, index) => {
+    const y =
+      padding.top +
+      ((index + 1) / 4) * (height - padding.top - padding.bottom)
+    return `
+      <line
+        x1="${padding.left}"
+        y1="${y}"
+        x2="${width - padding.right}"
+        y2="${y}"
+        stroke="#e4dacb"
+        stroke-width="1"
+      />
+    `
+  }).join("")
+  const vertical = Array.from({ length: 4 }, (_, index) => {
+    const x =
+      padding.left +
+      ((index + 1) / 5) * (width - padding.left - padding.right)
+    return `
+      <line
+        x1="${x}"
+        y1="${padding.top}"
+        x2="${x}"
+        y2="${height - padding.bottom}"
+        stroke="#e4dacb"
+        stroke-width="1"
+      />
+    `
+  }).join("")
+
+  return `${horizontal}${vertical}`
 }
 
 function renderRangeChart(low, point, high) {
@@ -814,6 +896,34 @@ function renderRangeChart(low, point, high) {
       )}%"></div>
       <div class="ci-point" style="left:${pointPct}%"></div>
     </div>
+  `
+}
+
+function renderSpendArrow(currentX, recommendedX, y, color) {
+  const direction = recommendedX > currentX ? 1 : -1
+  const start = currentX + direction * 4
+  const end = recommendedX - direction * 6
+  const head = recommendedX - direction * 6
+
+  return `
+    <path
+      d="M ${start.toFixed(2)} ${y} L ${end.toFixed(2)} ${y}"
+      stroke="${color}"
+      stroke-width="1"
+      fill="none"
+      stroke-linecap="round"
+    />
+    <path
+      d="M ${head.toFixed(2)} ${y} l ${(-direction * 4).toFixed(
+        2
+      )} -2 m ${(direction * 4).toFixed(2)} 2 l ${(-direction * 4).toFixed(
+        2
+      )} 2"
+      stroke="${color}"
+      stroke-width="1"
+      fill="none"
+      stroke-linecap="round"
+    />
   `
 }
 
@@ -1031,12 +1141,23 @@ function formatCompactSignedCurrency(value) {
     return `${sign}${formatCurrency(abs)}`
   }
 
-  return `${sign}${new Intl.NumberFormat("en-US", {
+  return `${sign}${formatCompactCurrency(abs)}`
+}
+
+function formatCompactCurrency(value) {
+  if (Math.abs(value) < 1000) {
+    return formatCurrency(value)
+  }
+
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(abs)}`
+  })
+    .format(value)
+    .replace("K", "k")
+    .replace("M", "m")
 }
 
 function formatSignedPercent(value) {

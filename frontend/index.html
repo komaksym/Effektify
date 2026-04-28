@@ -18,8 +18,9 @@
   </head>
   <body>
     <div class="app-shell">
-      <aside class="app-sidebar" aria-label="App rail">
+      <aside class="app-sidebar" aria-label="Primary">
         <div class="sidebar-mark">e</div>
+        <div class="sidebar-separator" aria-hidden="true"></div>
         <nav class="sidebar-nav">
           <button class="sidebar-icon is-active" type="button" aria-label="Counterfactual Coach">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -69,13 +70,38 @@
               />
             </svg>
           </button>
+          <button class="sidebar-icon" type="button" aria-label="Agent">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle
+                cx="12"
+                cy="12"
+                r="7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M8 12h8m-4-4v8"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.8"
+              />
+            </svg>
+          </button>
         </nav>
         <div class="sidebar-footer">
-          <button class="sidebar-icon" type="button" aria-label="Settings">
+          <button class="sidebar-icon" type="button" aria-label="Knowledge">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="2.4" />
               <path
-                d="M12 4.5v2.2m0 10.6v2.2M4.5 12h2.2m10.6 0h2.2M6.7 6.7l1.5 1.5m7.6 7.6 1.5 1.5m0-10.6-1.5 1.5m-7.6 7.6-1.5 1.5"
+                d="M5 5h9a4 4 0 0 1 4 4v10H9a4 4 0 0 1-4-4V5Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+              />
+              <path
+                d="M5 15a4 4 0 0 1 4-4h9"
                 fill="none"
                 stroke="currentColor"
                 stroke-linecap="round"
@@ -89,7 +115,7 @@
       <div class="main-shell">
         <header class="app-header">
           <div class="breadcrumbs">
-            <span>Effektify</span>
+            <strong>Effektify</strong>
             <span>/</span>
             <span>Apps</span>
             <span>/</span>
@@ -111,7 +137,6 @@
           <section id="hero" class="hero-section" aria-live="polite"></section>
           <section id="ledgerSection" class="content-section" aria-live="polite"></section>
           <section id="asides" class="content-section" aria-live="polite"></section>
-          <footer id="footer" class="page-footer"></footer>
         </main>
       </div>
     </div>

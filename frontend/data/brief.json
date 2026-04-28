@@ -4,7 +4,7 @@
     "week_iso": "2018-06-25",
     "brief_number": 136,
     "history_weeks": 208,
-    "generated_at": "2026-04-28T17:36:36+00:00",
+    "generated_at": "2026-04-28T18:33:49+00:00",
     "bootstrap_count": 500,
     "joint_r_squared": 0.48406158572227775,
     "warnings": []
@@ -14,8 +14,8 @@
     "delta_point": 20468.024302614387,
     "delta_low": -46190.67222736133,
     "delta_high": 70807.02045767484,
-    "total_current_revenue": 1929607.4951461982,
-    "total_recommended_revenue": 1950075.5194488126,
+    "total_current_revenue": 1056811.66666667,
+    "total_recommended_revenue": 1077279.6909692844,
     "base": 1004119.2039892306,
     "headline": "Keep the same <b>$19,301</b> weekly budget, pull dollars out of facebook, and push them into search for a modeled +$20,468 lift."
   },
