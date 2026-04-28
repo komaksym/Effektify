@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Effektify Counterfactual Coach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Inter+Tight:wght@300..700&family=JetBrains+Mono:wght@300..600&display=swap"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="app-sidebar" aria-label="App rail">
+        <div class="sidebar-mark">e</div>
+        <nav class="sidebar-nav">
+          <button class="sidebar-icon is-active" type="button" aria-label="Counterfactual Coach">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 16.5 9 12l3 3 8-9"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+              />
+              <circle cx="4" cy="16.5" r="1.6" fill="currentColor" />
+              <circle cx="9" cy="12" r="1.6" fill="currentColor" />
+              <circle cx="12" cy="15" r="1.6" fill="currentColor" />
+              <circle cx="20" cy="6" r="1.6" fill="currentColor" />
+            </svg>
+          </button>
+          <button class="sidebar-icon" type="button" aria-label="Signals">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 18c3-8 6-12 9-12 2.7 0 4.8 2.2 7 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.8"
+              />
+            </svg>
+          </button>
+          <button class="sidebar-icon" type="button" aria-label="Apps">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="6" height="6" rx="1.2" />
+              <rect x="14" y="4" width="6" height="6" rx="1.2" />
+              <rect x="4" y="14" width="6" height="6" rx="1.2" />
+              <rect x="14" y="14" width="6" height="6" rx="1.2" />
+            </svg>
+          </button>
+          <button class="sidebar-icon" type="button" aria-label="Controls">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="8" cy="12" r="2.4" />
+              <circle cx="16" cy="12" r="2.4" />
+              <path
+                d="M4 12h1.5m5 0h3m5 0H20"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.8"
+              />
+            </svg>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-icon" type="button" aria-label="Settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="2.4" />
+              <path
+                d="M12 4.5v2.2m0 10.6v2.2M4.5 12h2.2m10.6 0h2.2M6.7 6.7l1.5 1.5m7.6 7.6 1.5 1.5m0-10.6-1.5 1.5m-7.6 7.6-1.5 1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.8"
+              />
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <div class="main-shell">
+        <header class="app-header">
+          <div class="breadcrumbs">
+            <span>Effektify</span>
+            <span>/</span>
+            <span>Apps</span>
+            <span>/</span>
+            <strong>Counterfactual Coach</strong>
+          </div>
+          <div class="header-actions">
+            <div id="healthStatus" class="health-pill">Checking model state...</div>
+            <button id="refreshBtn" class="button button-secondary" type="button">
+              Refresh
+            </button>
+            <button id="shareBtn" class="button button-primary" type="button">
+              Share with team
+            </button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <section id="warnings" class="warnings hidden"></section>
+          <section id="hero" class="hero-section" aria-live="polite"></section>
+          <section id="ledgerSection" class="content-section" aria-live="polite"></section>
+          <section id="asides" class="content-section" aria-live="polite"></section>
+          <footer id="footer" class="page-footer"></footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
