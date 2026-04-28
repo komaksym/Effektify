@@ -133,6 +133,7 @@ def test_build_brief_payload_shape_and_partitioning() -> None:
         optimizer_dict=optimizer_dict,
         agent_output=agent_output,
         actual_allocation=actual,
+        actual_revenue=50_000.0,
     )
 
     assert set(brief) == {"meta", "hero", "channels", "asides"}
@@ -148,11 +149,9 @@ def test_build_brief_payload_shape_and_partitioning() -> None:
     assert brief["hero"]["delta_high"] == pytest.approx(
         optimizer_dict["total_delta_ci"][1]
     )
-    assert brief["hero"]["total_current_revenue"] == pytest.approx(
-        optimizer_dict["total_current_revenue"]
-    )
+    assert brief["hero"]["total_current_revenue"] == pytest.approx(50_000.0)
     assert brief["hero"]["total_recommended_revenue"] == pytest.approx(
-        optimizer_dict["total_recommended_revenue"]
+        50_000.0 + optimizer_dict["total_delta"]
     )
 
     assert [row["channel"] for row in brief["channels"]] == [
@@ -202,6 +201,7 @@ def test_sanitization_preserves_bold_and_strips_other_html() -> None:
         optimizer_dict=optimizer_dict,
         agent_output=agent_output,
         actual_allocation=actual,
+        actual_revenue=50_000.0,
     )
 
     facebook = next(
@@ -255,7 +255,7 @@ def test_build_brief_payload_errors_when_channel_names_do_not_line_up() -> None:
     )
 
     with pytest.raises(ValueError, match="missing recommendations for: facebook"):
-        build_brief_payload(cache, optimizer_dict, broken, actual)
+        build_brief_payload(cache, optimizer_dict, broken, actual, 50_000.0)
 
 
 def test_build_brief_payload_errors_on_duplicate_channel_names() -> None:
@@ -292,4 +292,4 @@ def test_build_brief_payload_errors_on_duplicate_channel_names() -> None:
     )
 
     with pytest.raises(ValueError, match="duplicate channel names in agent output"):
-        build_brief_payload(cache, optimizer_dict, broken, actual)
+        build_brief_payload(cache, optimizer_dict, broken, actual, 50_000.0)
