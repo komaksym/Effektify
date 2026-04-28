@@ -1,21 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/frontend/index.html"
-    },
-    {
-      "source": "/app.js",
-      "destination": "/frontend/app.js"
-    },
-    {
-      "source": "/styles.css",
-      "destination": "/frontend/styles.css"
-    },
-    {
-      "source": "/data/:path*",
-      "destination": "/frontend/data/:path*"
-    }
-  ]
+  "framework": null,
+  "installCommand": "pip install uv",
+  "buildCommand": "uv run python -m src.export_ui_payload",
+  "outputDirectory": "frontend"
 }
